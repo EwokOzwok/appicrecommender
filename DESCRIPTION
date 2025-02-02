@@ -1,0 +1,17 @@
+Package: appicrecommender
+Title: APPIC Recommender
+Version: 0.0.1.0000
+Authors@R: 
+    person("Ewok", "Ozwok", , "evcareassociates@gmail.com", role = c("aut", "cre"))
+Description: This app uses a recommender algorithm to provide appic internship site recommendations.
+License: What license is it under?
+Imports: 
+    config,
+    golem,
+    shiny
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.1.1
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
