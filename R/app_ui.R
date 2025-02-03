@@ -6,6 +6,7 @@
 #' @import shinyMobile
 #' @import htmltools
 #' @import DT
+#' @import shinyjs
 #' @noRd
 app_ui <- function(request) {
 
@@ -14,6 +15,7 @@ app_ui <- function(request) {
     golem_add_external_resources(),
     # Your application UI logic
     f7Page(
+      useShinyjs(),
       title = "APPIC Site Recommender",
       options = list(theme=c("auto"), dark=TRUE, preloader = F,  pullToRefresh=TRUE),
       allowPWA=F,
@@ -36,9 +38,22 @@ app_ui <- function(request) {
                 intensity = 5,
                 hover = TRUE,
                 f7Card(
-                  title = "What does the APPIC Recommender do?",
                   f7Align(h3("The APPIC Site Recommender takes a list of APPIC site numbers, runs a recommender algorithm, and outputs the top 10 APPIC internship sites that most closely resemble the description of your preferred sites."),
-                          side = c("left")),
+                          side = c("center")),
+                  br(),
+                  f7Align(h4("Super useful recommendations got you feeling generous?"),side = c("center")),
+                  f7Align(h4("A coffee in these trying times would be greatly appreciated!"),side = c("center")),
+
+                  tags$div(
+                    id = "buy_me_a_coffee",
+                    style = "display: flex; justify-content: center; align-items: center; height: auto; width: 100%;",
+                    tags$img(
+                      src = "https://cdn.buymeacoffee.com/buttons/v2/default-blue.png",  # Replace with your image URL
+                      alt = "Buy Me A Coffee",
+                      style = "height: 60px !important;width: 217px !important; cursor: pointer;"
+                    )
+                  ),
+
                   hairlines = F, strong = T, inset = F, tablet = FALSE
                 )
               )
@@ -56,17 +71,7 @@ app_ui <- function(request) {
                 )
               )
             ),
-            f7Block(
-              f7Shadow(
-                intensity = 5,
-                hover = TRUE,
-                f7Card(
-                  uiOutput("download_button_ui"),
-                  DTOutput("dataTable"),
-                  hairlines = F, strong = T, inset = F, tablet = FALSE
-                )
-              )
-            )
+            uiOutput("OutputBlock"),
           )
         )
       )
@@ -91,6 +96,9 @@ golem_add_external_resources <- function() {
   # )
 
   tags$head(
+    tags$script(src = "https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js"),
+
+
     tags$style(HTML("
     .dataTable {
       color: white !important;

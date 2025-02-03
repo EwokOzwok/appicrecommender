@@ -12,6 +12,17 @@
 #' @import DT
 #' @noRd
 app_server <- function(input, output, session) {
+
+  runjs('
+    $(document).ready(function() {
+      $("#buy_me_a_coffee").click(function() {
+        Shiny.setInputValue("buy_me_a_coffee", "clicked");
+        // Trigger the link opening here after setting the input value
+        window.open("https://www.buymeacoffee.com/Ewokozwok", "_blank");
+      });
+    });
+  ')
+
   # Define Promises Functions -----------------------------------------------
   future::plan(multisession)
   `%...>%` <- function(promise, success) {
@@ -28,6 +39,18 @@ app_server <- function(input, output, session) {
     }
   }
 
+
+
+
+
+  observeEvent(input$buy_me_a_coffee,{
+    runjs('window.open("https://buymeacoffee.com/Ewokozwok", "_blank");')
+
+
+  })
+
+
+
   observeEvent(input$get_recommendations, {
     # Split and convert input numbers to numeric vector
     sites <- as.numeric(unlist(strsplit(input$site_numbers, "[,\\s]+")))
@@ -38,6 +61,15 @@ app_server <- function(input, output, session) {
     if(length(invalid_sites) > 0) {
       showNotification(
         paste("Invalid site number(s) entered:", paste(invalid_sites, collapse=", ")),
+        type = "error",
+        duration = 15
+      )
+      return()  # This stops the execution of the rest of the observer
+    }
+
+    if(length(sites) < 2) {
+      showNotification(
+        paste("Enter at least 2 sites"),
         type = "error",
         duration = 15
       )
@@ -107,6 +139,22 @@ app_server <- function(input, output, session) {
           output$download_button_ui<-renderUI({
             tagList(
               f7DownloadButton("download", "Download Recommendations")
+            )
+          })
+
+          output$OutputBlock<-renderUI({
+            tagList(
+              f7Block(
+                f7Shadow(
+                  intensity = 5,
+                  hover = TRUE,
+                  f7Card(
+                    uiOutput("download_button_ui"),
+                    DTOutput("dataTable"),
+                    hairlines = F, strong = T, inset = F, tablet = FALSE
+                  )
+                )
+              )
             )
           })
 
