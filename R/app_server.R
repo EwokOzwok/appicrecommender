@@ -14,14 +14,16 @@
 app_server <- function(input, output, session) {
 
   runjs('
-    $(document).ready(function() {
-      $("#buy_me_a_coffee").click(function() {
-        Shiny.setInputValue("buy_me_a_coffee", "clicked");
-        // Trigger the link opening here after setting the input value
-        window.open("https://www.buymeacoffee.com/Ewokozwok", "_blank");
-      });
+  $(document).ready(function() {
+    // Ensure this runs only after the table is rendered
+    $("#buy_me_a_coffee").click(function() {
+      Shiny.setInputValue("buy_me_a_coffee", "clicked");
+      // Trigger the link opening here after setting the input value
+      window.open("https://www.buymeacoffee.com/Ewokozwok", "_blank");
     });
-  ')
+  });
+')
+
 
   # Define Promises Functions -----------------------------------------------
   future::plan(multisession)
@@ -49,14 +51,31 @@ app_server <- function(input, output, session) {
 
   })
 
-
+  clean_json_string <- function(json_string) {
+    json_string <- gsub("NaN", "null", json_string)  # Replace NaN with null
+    return(json_string)
+  }
 
   observeEvent(input$get_recommendations, {
     # Split and convert input numbers to numeric vector
     sites <- as.numeric(unlist(strsplit(input$site_numbers, "[,\\s]+")))
 
+    # Replace NaN values with NULL or another appropriate value (e.g., NA, "N/A")
+    sites[is.nan(sites)] <- NULL
         # Check if all sites exist in appic[[1]] - assuming APPIC numbers are in first element
     invalid_sites <- sites[!sites %in% appic$APPICNumber]
+
+    # Check if all elements are numeric
+    if (any(is.na(sites))) {
+      showNotification(
+        "Please enter valid numeric site numbers.",
+        type = "error",
+        duration = 15
+      )
+      return()  # Stop execution if any value is invalid
+    }
+
+
 
     if(length(invalid_sites) > 0) {
       showNotification(
@@ -93,14 +112,14 @@ app_server <- function(input, output, session) {
         print("POST request completed.")
         print(paste("Response status:", status_code(response)))
 
-        # Get the raw content and parse it
-        response_content <- rawToChar(response$content)
-        print(paste("Raw response:", response_content))
+
 
         if (status_code(response) != 200) {
-          stop(paste("Server returned error:", response_content))
+          stop(paste("Server returned error:", response))
         }
-
+        response_content <- rawToChar(response$content)
+        response_content <- clean_json_string(response_content)  # Clean the response
+        # print(paste("Raw response:", response_content))
         return(response_content)  # Return the raw JSON string
       }, error = function(e) {
         print(paste("Error during POST request:", e$message))
@@ -117,46 +136,34 @@ app_server <- function(input, output, session) {
           json_data <- fromJSON(result)
           print("JSON parsed successfully")
           json_data<-as.data.frame(as.matrix(json_data))
-          json_data<-json_data[,1:5]
+          clean_json_data <- json_data[, 1:5]  # Filter the necessary columns
+          print(json_data[1,1:5])
           # Show the data frame to the user in a DataTable
           output$dataTable <- DT::renderDT({
-            req(json_data)
-            json_data
+            req(json_data)  # Ensure json_data is available
+            clean_json_data <- json_data[, 1:5]  # Filter the necessary columns
+            DT::datatable(clean_json_data)  # Render the table with DT::datatable
           })
 
-
+          output$text <- renderText(
+            print("THIS IS THE OUTPUT!")
+          )
 
           output$download <- downloadHandler(
             filename = function() {
               paste("APPIC Site Recommendataions - ", Sys.Date(), ".csv", sep="")
             },
             content = function(file) {
-              write.csv(json_data, file, row.names = FALSE)  # Changed 'data' to 'json_data'
+              write.csv(json_data, file, row.names = FALSE)
             }
           )
 
-
-          output$download_button_ui<-renderUI({
-            tagList(
-              f7DownloadButton("download", "Download Recommendations")
-            )
+          output$download_button_ui <- renderUI({
+            f7DownloadButton("download", "Download Recommendations")
           })
 
-          output$OutputBlock<-renderUI({
-            tagList(
-              f7Block(
-                f7Shadow(
-                  intensity = 5,
-                  hover = TRUE,
-                  f7Card(
-                    uiOutput("download_button_ui"),
-                    DTOutput("dataTable"),
-                    hairlines = F, strong = T, inset = F, tablet = FALSE
-                  )
-                )
-              )
-            )
-          })
+
+          print(head(json_data))
 
 
 

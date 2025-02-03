@@ -71,7 +71,18 @@ app_ui <- function(request) {
                 )
               )
             ),
-            uiOutput("OutputBlock"),
+            f7Block(
+              f7Shadow(
+                intensity = 5,
+                hover = TRUE,
+              f7Card(
+              uiOutput("download_button_ui"),
+              DT::DTOutput("dataTable"),
+              verbatimTextOutput("text"),
+              hairlines = F, strong = T, inset = F, tablet = FALSE
+              )
+            )
+          )
           )
         )
       )
