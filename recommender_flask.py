@@ -4,6 +4,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 from flask_cors import CORS
+import csv
 
 app = Flask(__name__)
 CORS(app)
@@ -67,7 +68,19 @@ def get_recommendations():
         appic_numbers = data['appic_numbers']
         program = data['program_type']
         degree = data['degree_type']
+        print(appic_numbers)
+        print(program)
+        print(degree)
         
+        # Save data to CSV
+        with open('requests_log.csv', mode='a', newline='') as file:
+            writer = csv.writer(file)
+            # Write headers if the file is empty
+            if file.tell() == 0:
+                writer.writerow(['appic_numbers', 'program', 'degree'])
+            # Write new row
+            writer.writerow([appic_numbers, program, degree])
+
         # Convert to integers and validate
         try:
             appic_numbers = [int(num) for num in appic_numbers]
