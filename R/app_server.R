@@ -145,9 +145,6 @@ app_server <- function(input, output, session) {
             DT::datatable(clean_json_data)  # Render the table with DT::datatable
           })
 
-          output$text <- renderText(
-            print("THIS IS THE OUTPUT!")
-          )
 
           output$download <- downloadHandler(
             filename = function() {
@@ -163,7 +160,7 @@ app_server <- function(input, output, session) {
           })
 
 
-          print(head(json_data))
+
 
 
 

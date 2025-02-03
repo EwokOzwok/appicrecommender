@@ -78,7 +78,6 @@ app_ui <- function(request) {
               f7Card(
               uiOutput("download_button_ui"),
               DT::DTOutput("dataTable"),
-              verbatimTextOutput("text"),
               hairlines = F, strong = T, inset = F, tablet = FALSE
               )
             )

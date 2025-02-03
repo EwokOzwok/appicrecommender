@@ -1,0 +1,12 @@
+name: appic
+title: appic
+username: ualbanyprojectaccess
+account: ualbanyprojectaccess
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 13882462
+bundleId: 9737860
+url: https://ualbanyprojectaccess.shinyapps.io/appic/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
