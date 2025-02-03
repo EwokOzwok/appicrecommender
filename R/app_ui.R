@@ -38,11 +38,11 @@ app_ui <- function(request) {
                 intensity = 5,
                 hover = TRUE,
                 f7Card(
-                  f7Align(h3("The APPIC Site Recommender takes a list of APPIC site numbers, runs a recommender algorithm, and outputs the top 10 APPIC internship sites that most closely resemble the description of your preferred sites."),
-                          side = c("center")),
+                  f7Align(h4("The APPIC Site Recommender takes a list of APPIC site numbers, runs a recommender algorithm,"), side = c("center")),
+                  f7Align(h4("and outputs the top 10 APPIC internship sites that most closely resemble the description of your preferred sites."), side = c("center")),
                   br(),
-                  f7Align(h4("Super useful recommendations got you feeling generous?"),side = c("center")),
-                  f7Align(h4("A coffee in these trying times would be greatly appreciated!"),side = c("center")),
+                  f7Align(h5("Super useful recommendations got you feeling generous?"),side = c("center")),
+                  f7Align(h5("A coffee in these trying times would be greatly appreciated!"),side = c("center")),
 
                   tags$div(
                     id = "buy_me_a_coffee",
