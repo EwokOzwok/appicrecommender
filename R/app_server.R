@@ -44,6 +44,23 @@ app_server <- function(input, output, session) {
 
 
 
+  observe({
+    program = input$programtype
+    degree = input$degreetype
+    if(program == "select one" | degree == "select one"){
+      output$get_recs_button <- renderUI({})
+
+    } else {
+      output$get_recs_button <- renderUI({
+        tagList(
+          f7Button("get_recommendations", "Get Site Recommendations!")
+        )
+      })
+   }
+
+  })
+
+
 
   observeEvent(input$buy_me_a_coffee,{
     runjs('window.open("https://buymeacoffee.com/Ewokozwok", "_blank");')
@@ -59,7 +76,8 @@ app_server <- function(input, output, session) {
   observeEvent(input$get_recommendations, {
     # Split and convert input numbers to numeric vector
     sites <- as.numeric(unlist(strsplit(input$site_numbers, "[,\\s]+")))
-
+    program <- input$programtype
+    degree <- input$degreetype
     # Replace NaN values with NULL or another appropriate value (e.g., NA, "N/A")
     sites[is.nan(sites)] <- NULL
         # Check if all sites exist in appic[[1]] - assuming APPIC numbers are in first element
@@ -104,8 +122,9 @@ app_server <- function(input, output, session) {
         print(paste("Sending sites:", paste(sites, collapse=", ")))
 
         response <- POST(
-          "https://evanozmat.com/recommend",
-          body = list(appic_numbers = sites),
+          "http://localhost:9090/recommend",
+          # "https://evanozmat.com/recommend",
+          body = list(appic_numbers = sites, program_type = program, degree_type = degree),
           encode = "json"
         )
 
@@ -136,12 +155,11 @@ app_server <- function(input, output, session) {
           json_data <- fromJSON(result)
           print("JSON parsed successfully")
           json_data<-as.data.frame(as.matrix(json_data))
-          clean_json_data <- json_data[, 1:5]  # Filter the necessary columns
-          print(json_data[1,1:5])
-          # Show the data frame to the user in a DataTable
+
+                    # Show the data frame to the user in a DataTable
           output$dataTable <- DT::renderDT({
             req(json_data)  # Ensure json_data is available
-            clean_json_data <- json_data[, 1:5]  # Filter the necessary columns
+            clean_json_data <- json_data[, c(7,2:5)]  # Filter the necessary columns
             DT::datatable(clean_json_data)  # Render the table with DT::datatable
           })
 

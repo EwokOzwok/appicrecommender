@@ -3,20 +3,16 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
-from flask_cors import CORS  # Add CORS support
+from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+CORS(app)
 
 # Load and prepare the data when the app starts
-df = pd.read_csv('APPIC_with_web_data.csv')
+df = pd.read_csv('appic_clean.csv')
 df['web_data'].fillna('', inplace=True)
 
-# Initialize and fit the vectorizer
-vectorizer = TfidfVectorizer(stop_words='english', max_features=5000)
-tfidf_matrix = vectorizer.fit_transform(df['web_data'])
-
-def recommend_sites(favorite_appic_numbers, top_n=10):
+def recommend_sites(favorite_appic_numbers, top_n=10, data=None):
     """
     Recommend internship sites similar to given favorites.
     Parameters:
@@ -25,29 +21,34 @@ def recommend_sites(favorite_appic_numbers, top_n=10):
     Returns:
     pd.DataFrame: DataFrame containing recommended sites with similarity scores.
     """
+    # Create tfidf_matrix for the given dataframe (data) instead of using a global one
+    vectorizer = TfidfVectorizer(stop_words='english', max_features=5000)
+    tfidf_matrix = vectorizer.fit_transform(data['web_data'])
+
     # Find the row indices for the favorite APPIC numbers
-    favorite_indices = df[df['APPIC Number'].isin(favorite_appic_numbers)].index.tolist()
-    
+    favorite_indices = data[data['APPIC Number'].isin(favorite_appic_numbers)].index.tolist()
+
     if not favorite_indices:
         raise ValueError("No matching APPIC numbers found in the dataset")
-    
+
     # Compute the mean vector for the favorite sites
     favorite_vector = np.asarray(tfidf_matrix[favorite_indices].mean(axis=0))
-    
+
     # Compute cosine similarity between the favorite vector and all other rows
     similarities = cosine_similarity(favorite_vector, tfidf_matrix).flatten()
-    
+
     # Exclude the provided favorite sites from recommendations
-    df['similarity_score'] = similarities
-    recommendations = df[~df['APPIC Number'].isin(favorite_appic_numbers)]
-    
+    data['similarity_score'] = similarities
+    recommendations = data[~data['APPIC Number'].isin(favorite_appic_numbers)]
+
     # Sort recommendations by similarity score and return the top N
     recommendations = recommendations.sort_values(by='similarity_score', ascending=False)
-    
+
     # Select desired columns for output
     output_columns = [
         'APPIC Number', 'similarity_score', 'Site / Department', 
         'City', 'State', 'Country', 'Application Due Date', 'web_data']
+    
     return recommendations[output_columns].head(top_n)
 
 @app.route('/recommend', methods=['POST'])
@@ -56,14 +57,16 @@ def get_recommendations():
         # Get the request data and log it
         data = request.get_json()
         print(f"Received request data: {data}")
-        
+
         if not data or 'appic_numbers' not in data:
             return jsonify({
                 'error': 'No appic_numbers provided in request',
                 'received_data': data
             }), 400
-        
+
         appic_numbers = data['appic_numbers']
+        program = data['program_type']
+        degree = data['degree_type']
         
         # Convert to integers and validate
         try:
@@ -73,10 +76,13 @@ def get_recommendations():
                 'error': 'Invalid APPIC numbers format',
                 'received_numbers': appic_numbers
             }), 400
-        
+
+        # Filter the dataframe based on the program and degree types
+        filtered_df = df[(df[program] == 1) & (df[degree] == 1)]
+
         # Get recommendations
-        recommendations = recommend_sites(appic_numbers)
-        
+        recommendations = recommend_sites(appic_numbers, data=filtered_df)
+
         # Convert DataFrame to dictionary for JSON response
         recommendations_dict = recommendations.to_dict(orient='records')
         for record in recommendations_dict:
@@ -85,10 +91,10 @@ def get_recommendations():
                     record[key] = int(value)
                 elif isinstance(value, (np.float64, np.float32)):
                     record[key] = float(value)
-        
+
         response = jsonify(recommendations_dict)
         return response
-    
+
     except Exception as e:
         print(f"Error processing request: {str(e)}")
         return jsonify({
