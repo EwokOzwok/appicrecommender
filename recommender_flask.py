@@ -55,11 +55,11 @@ def recommend_sites(favorite_appic_numbers, top_n=10, data=None):
     
     return recommendations[output_columns].head(top_n)
 
-csv_path = "requests_clean.csv"  # Replace with your file path
 def recommend_appic_numbers(csv_file_path, input_appic_numbers):
     # Load the CSV file
     df = pd.read_csv(csv_file_path)
-
+    df = df.drop_duplicates()
+    df['searchcols'] = df['appic_numbers']
     # Ensure the search column is properly interpreted as lists
     df['searchcols'] = df['searchcols'].apply(eval)  # Evaluates the string representation of lists
 
@@ -140,6 +140,8 @@ def get_recommendations():
             recommendations = recommend_sites(appic_numbers, data=filtered_df)
     
             # USER RECOMMENDATIONS HERE!
+            csv_path = "requests_log.csv"  # Replace with your file path
+
             user_recs = recommend_appic_numbers(csv_path, appic_numbers)
             
             top_5_user_recs = [appic_number for appic_number, score in user_recs[:5]]
