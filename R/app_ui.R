@@ -74,8 +74,8 @@ app_ui <- function(request) {
                   br(),
                   f7Toggle("user_recs", "Include User Recommendations"),
                   br(),
-                  uiOutput("get_recs_button"),
                   br(),
+                  uiOutput("get_recs_button"),
                   br(),
                   hairlines = F, strong = T, inset = F, tablet = FALSE
                 )
