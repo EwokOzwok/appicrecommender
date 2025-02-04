@@ -72,9 +72,11 @@ app_ui <- function(request) {
                   br(),
                   f7Select("degreetype", "Select your degree type", choice = c("select one", "PhD", "PsyD", "EdD")),
                   br(),
+                  f7Toggle("user_recs", "Include User Recommendations"),
                   br(),
                   uiOutput("get_recs_button"),
-
+                  br(),
+                  br(),
                   hairlines = F, strong = T, inset = F, tablet = FALSE
                 )
               )

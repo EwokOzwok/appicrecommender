@@ -78,6 +78,14 @@ app_server <- function(input, output, session) {
     sites <- as.numeric(unlist(strsplit(input$site_numbers, "[,\\s]+")))
     program <- input$programtype
     degree <- input$degreetype
+    user_rec_toggle <- input$user_recs
+
+    if(user_rec_toggle == T){
+      user_rec_status = 1
+    } else {
+      user_rec_status = 0
+    }
+
     # Replace NaN values with NULL or another appropriate value (e.g., NA, "N/A")
     sites[is.nan(sites)] <- NULL
         # Check if all sites exist in appic[[1]] - assuming APPIC numbers are in first element
@@ -122,9 +130,12 @@ app_server <- function(input, output, session) {
         print(paste("Sending sites:", paste(sites, collapse=", ")))
 
         response <- POST(
-          "https://evanozmat.com/recommend",
           # "https://evanozmat.com/recommend",
-          body = list(appic_numbers = sites, program_type = program, degree_type = degree),
+          "http://localhost:9090/recommend",
+          body = list(appic_numbers = sites,
+                      program_type = program,
+                      degree_type = degree,
+                      user_rec_status = user_rec_status),
           encode = "json"
         )
 
@@ -156,10 +167,12 @@ app_server <- function(input, output, session) {
           print("JSON parsed successfully")
           json_data<-as.data.frame(as.matrix(json_data))
 
-                    # Show the data frame to the user in a DataTable
+
+          # Show the data frame to the user in a DataTable
           output$dataTable <- DT::renderDT({
             req(json_data)  # Ensure json_data is available
             clean_json_data <- json_data[, c(7,2:5)]  # Filter the necessary columns
+
             DT::datatable(clean_json_data)  # Render the table with DT::datatable
           })
 

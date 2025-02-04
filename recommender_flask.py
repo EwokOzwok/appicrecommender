@@ -5,6 +5,9 @@ from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 from flask_cors import CORS
 import csv
+from collections import Counter
+from itertools import combinations
+
 
 app = Flask(__name__)
 CORS(app)
@@ -52,6 +55,43 @@ def recommend_sites(favorite_appic_numbers, top_n=10, data=None):
     
     return recommendations[output_columns].head(top_n)
 
+csv_path = "requests_clean.csv"  # Replace with your file path
+def recommend_appic_numbers(csv_file_path, input_appic_numbers):
+    # Load the CSV file
+    df = pd.read_csv(csv_file_path)
+
+    # Ensure the search column is properly interpreted as lists
+    df['searchcols'] = df['searchcols'].apply(eval)  # Evaluates the string representation of lists
+
+    # Count co-occurrences of appic numbers
+    cooccurrence_counter = Counter()
+
+    # Populate co-occurrence counts
+    for search_list in df['searchcols']:
+        for appic_pair in combinations(search_list, 2):
+            cooccurrence_counter[frozenset(appic_pair)] += 1
+
+    # Calculate recommendations based on input_appic_numbers
+    recommendation_scores = Counter()
+    for appic_number in input_appic_numbers:
+        for appic_pair, count in cooccurrence_counter.items():
+            if appic_number in appic_pair:
+                other_numbers = list(appic_pair - {appic_number})
+                if other_numbers:
+                    recommendation_scores[other_numbers[0]] += count
+
+    # Rank and return the recommended APPIC numbers as a list of tuples (appic_number, score)
+    # The score represents the frequency of co-occurrence, where higher scores indicate stronger recommendations
+    ranked_recommendations = recommendation_scores.most_common()
+
+    return ranked_recommendations
+  
+  
+  
+# Example usage:
+
+
+
 @app.route('/recommend', methods=['POST'])
 def get_recommendations():
     try:
@@ -68,6 +108,7 @@ def get_recommendations():
         appic_numbers = data['appic_numbers']
         program = data['program_type']
         degree = data['degree_type']
+        user_rec_status = data['user_rec_status']
         print(appic_numbers)
         print(program)
         print(degree)
@@ -90,11 +131,32 @@ def get_recommendations():
                 'received_numbers': appic_numbers
             }), 400
 
-        # Filter the dataframe based on the program and degree types
         filtered_df = df[(df[program] == 1) & (df[degree] == 1)]
 
-        # Get recommendations
-        recommendations = recommend_sites(appic_numbers, data=filtered_df)
+        if user_rec_status == 1:
+            # Filter the dataframe based on the program and degree types
+    
+            # Get recommendations
+            recommendations = recommend_sites(appic_numbers, data=filtered_df)
+    
+            # USER RECOMMENDATIONS HERE!
+            user_recs = recommend_appic_numbers(csv_path, appic_numbers)
+            
+            top_5_user_recs = [appic_number for appic_number, score in user_recs[:5]]
+            
+            
+            user_recs_df = df[df['APPIC Number'].isin(top_5_user_recs)]
+            
+            user_recs_df['similarity_score'] = "User Suggested"
+            # Select columns from user_recs_df that match recommendations and reorder them
+            user_recs_selected = user_recs_df[['APPIC Number', 'similarity_score', 'Site / Department', 
+                                               'City', 'State', 'Country', 'Application Due Date', 'web_data']]
+            
+            # Ensure user recommendations are at the top
+            recommendations = pd.concat([user_recs_selected, recommendations], ignore_index=True)
+
+        if user_rec_status == 0:
+            recommendations = recommend_sites(appic_numbers, data=filtered_df)
 
         # Convert DataFrame to dictionary for JSON response
         recommendations_dict = recommendations.to_dict(orient='records')
