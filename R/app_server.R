@@ -167,23 +167,24 @@ app_server <- function(input, output, session) {
 
 
 
-agency_type = c(
-  "Academic Health Center",
-  "Armed Forces Medical Center",
-  "Child/Adolescent Psychiatric or Pediatrics",
-  "Community Health Center",
-  "Consortium",
-  "Medical School",
-  "Prison or Correctional Facility",
-  "Private General Hospital",
-  "Private Outpatient Clinic",
-  "Private Psychiatric Hospital",
-  "Psychology Department",
-  "School District",
-  "State/County/Other Public Hospital",
-  "VA Medical Center",
-  "Other"
-)
+# agency_type = c(
+#   "Select Agency Type(s) (OPTIONAL)",
+#   "Academic Health Center",
+#   "Armed Forces Medical Center",
+#   "Child/Adolescent Psychiatric or Pediatrics",
+#   "Community Health Center",
+#   "Consortium",
+#   "Medical School",
+#   "Prison or Correctional Facility",
+#   "Private General Hospital",
+#   "Private Outpatient Clinic",
+#   "Private Psychiatric Hospital",
+#   "Psychology Department",
+#   "School District",
+#   "State/County/Other Public Hospital",
+#   "VA Medical Center",
+#   "Other"
+# )
 
 
 
