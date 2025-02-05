@@ -13,6 +13,9 @@
 #' @noRd
 app_server <- function(input, output, session) {
 
+  site_list <- reactiveValues(appic = appic$APPICNumber, site = appic$Site...Department)
+
+
   runjs('
   $(document).ready(function() {
     // Ensure this runs only after the table is rendered
@@ -49,14 +52,97 @@ app_server <- function(input, output, session) {
     degree = input$degreetype
     if(program == "select one" | degree == "select one"){
       output$get_recs_button <- renderUI({})
+      output$site_selector <- renderUI({})
+
 
     } else {
+
+      if(degree == "PhD"){
+        if(program == "Clinical"){
+          site_list$site = appic[appic$PhD == 1 & appic$Clinical == 1, "Site...Department"]
+          site_list$appic = appic[appic$PhD == 1 & appic$Clinical == 1, "APPICNumber"]
+
+
+          }
+
+        if(program == "Counseling"){
+          site_list$site = appic[appic$PhD == 1 & appic$Counseling == 1, "Site...Department"]
+          site_list$appic = appic[appic$PhD == 1 & appic$Counseling == 1, "APPICNumber"]
+
+          }
+
+        if(program == "School"){
+          site_list$site = appic[appic$PhD == 1 & appic$School == 1, "Site...Department"]
+          site_list$appic = appic[appic$PhD == 1 & appic$School == 1, "APPICNumber"]
+          }
+      }
+
+      if(degree == "PsyD"){
+        if(program == "Clinical"){
+          site_list$site = appic[appic$PsyD == 1 & appic$Clinical == 1, "Site...Department"]
+          site_list$appic = appic[appic$PsyD == 1 & appic$Clinical == 1, "APPICNumber"]
+
+
+        }
+
+        if(program == "Counseling"){
+          site_list$site = appic[appic$PsyD == 1 & appic$Counseling == 1, "Site...Department"]
+          site_list$appic = appic[appic$PsyD == 1 & appic$Counseling == 1, "APPICNumber"]
+
+        }
+
+        if(program == "School"){
+          site_list$site = appic[appic$PsyD == 1 & appic$School == 1, "Site...Department"]
+          site_list$appic = appic[appic$PsyD == 1 & appic$School == 1, "APPICNumber"]
+        }
+      }
+
+
+      if(degree == "EdD"){
+        if(program == "Clinical"){
+          site_list$site = appic[appic$EdD == 1 & appic$Clinical == 1, "Site...Department"]
+          site_list$appic = appic[appic$EdD == 1 & appic$Clinical == 1, "APPICNumber"]
+
+
+        }
+
+        if(program == "Counseling"){
+          site_list$site = appic[appic$EdD == 1 & appic$Counseling == 1, "Site...Department"]
+          site_list$appic = appic[appic$EdD == 1 & appic$Counseling == 1, "APPICNumber"]
+
+        }
+
+        if(program == "School"){
+          site_list$site = appic[appic$EdD == 1 & appic$School == 1, "Site...Department"]
+          site_list$appic = appic[appic$EdD == 1 & appic$School == 1, "APPICNumber"]
+        }
+      }
+
+
+
+      output$site_selector <- renderUI({
+        tagList(
+          f7SmartSelect("sites", "Choose at least 2 sites:", openIn = 'page', searchbar = T, multiple = T, selected = "Choose sites", choices = site_list$site),
+
+        )
+      })
+
+
+
       output$get_recs_button <- renderUI({
         tagList(
           f7Button("get_recommendations", "Get Site Recommendations!")
         )
       })
-   }
+
+
+
+
+    }
+
+
+
+
 
   })
 
@@ -73,9 +159,39 @@ app_server <- function(input, output, session) {
     return(json_string)
   }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+sites<-c("Northern Arizona University/Counseling Services","University of Arizona College of Medicine/Department of Psychiatry")
+
   observeEvent(input$get_recommendations, {
     # Split and convert input numbers to numeric vector
-    sites <- as.numeric(unlist(strsplit(input$site_numbers, "[,\\s]+")))
+    # sites <- as.numeric(unlist(strsplit(input$site_numbers, "[,\\s]+")))
+    sites <- na.omit(as.list(input$sites))
+    appic_numbers <- c()  # Initialize an empty list to store results
+
+    for (site in sites) {
+      print(site)
+      # Extract numbers for each site and append to the list
+      appic_numbers <- c(appic_numbers, appic[appic$Site...Department == site, "APPIC.Number"])
+    }
+
+    print(appic_numbers)
+
     program <- input$programtype
     degree <- input$degreetype
     user_rec_toggle <- input$user_recs
@@ -87,30 +203,30 @@ app_server <- function(input, output, session) {
     }
 
     # Replace NaN values with NULL or another appropriate value (e.g., NA, "N/A")
-    sites[is.nan(sites)] <- NULL
+    # appic_numbers[is.nan(sites)] <- NULL
         # Check if all sites exist in appic[[1]] - assuming APPIC numbers are in first element
-    invalid_sites <- sites[!sites %in% appic$APPICNumber]
+    # invalid_sites <- appic_numbers[!appic_numbers %in% appic$APPIC.Number]
 
     # Check if all elements are numeric
-    if (any(is.na(sites))) {
-      showNotification(
-        "Please enter valid numeric site numbers.",
-        type = "error",
-        duration = 15
-      )
-      return()  # Stop execution if any value is invalid
-    }
+    # if (any(is.na(sites))) {
+    #   showNotification(
+    #     "Please enter valid numeric site numbers.",
+    #     type = "error",
+    #     duration = 15
+    #   )
+    #   return()  # Stop execution if any value is invalid
+    # }
 
 
-
-    if(length(invalid_sites) > 0) {
-      showNotification(
-        paste("Invalid site number(s) entered:", paste(invalid_sites, collapse=", ")),
-        type = "error",
-        duration = 15
-      )
-      return()  # This stops the execution of the rest of the observer
-    }
+#
+#     if(length(invalid_sites) > 0) {
+#       showNotification(
+#         paste("Invalid site number(s) entered:", paste(invalid_sites, collapse=", ")),
+#         type = "error",
+#         duration = 15
+#       )
+#       return()  # This stops the execution of the rest of the observer
+#     }
 
     if(length(sites) < 2) {
       showNotification(
@@ -124,6 +240,8 @@ app_server <- function(input, output, session) {
 
 
 
+
+
     promise <- future({
       tryCatch({
         print("Starting POST request...")
@@ -132,7 +250,7 @@ app_server <- function(input, output, session) {
         response <- POST(
           "https://evanozmat.com/recommend",
           # "http://localhost:9090/recommend",
-          body = list(appic_numbers = sites,
+          body = list(appic_numbers = appic_numbers,
                       program_type = program,
                       degree_type = degree,
                       user_rec_status = user_rec_status),
