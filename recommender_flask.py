@@ -83,8 +83,9 @@ def recommend_appic_numbers(csv_file_path, input_appic_numbers):
     # Rank and return the recommended APPIC numbers as a list of tuples (appic_number, score)
     # The score represents the frequency of co-occurrence, where higher scores indicate stronger recommendations
     ranked_recommendations = recommendation_scores.most_common()
-
-    return ranked_recommendations
+    filtered_recommendations = [rec for rec in ranked_recommendations if rec[0] not in input_appic_numbers]
+    
+    return filtered_recommendations
   
   
   
