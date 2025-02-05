@@ -167,6 +167,23 @@ app_server <- function(input, output, session) {
 
 
 
+agency_type = c(
+  "Academic Health Center",
+  "Armed Forces Medical Center",
+  "Child/Adolescent Psychiatric or Pediatrics",
+  "Community Health Center",
+  "Consortium",
+  "Medical School",
+  "Prison or Correctional Facility",
+  "Private General Hospital",
+  "Private Outpatient Clinic",
+  "Private Psychiatric Hospital",
+  "Psychology Department",
+  "School District",
+  "State/County/Other Public Hospital",
+  "VA Medical Center",
+  "Other"
+)
 
 
 
@@ -175,8 +192,6 @@ app_server <- function(input, output, session) {
 
 
 
-
-sites<-c("Northern Arizona University/Counseling Services","University of Arizona College of Medicine/Department of Psychiatry")
 
   observeEvent(input$get_recommendations, {
     # Split and convert input numbers to numeric vector
