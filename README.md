@@ -1,4 +1,5 @@
 # APPIC Site Recommender
+![image](https://github.com/user-attachments/assets/8e7130a9-106b-483e-854c-bceb1bae9e43)
 
 ## Project Description
 The **APPIC Site Recommender** is a powerful tool designed to help users identify APPIC internship sites that closely resemble their selections. By leveraging a cosine similarity algorithm, the app analyzes site descriptions to recommend similar sites. Additionally, the app incorporates recommendations from previous users. For instance, if a prior user searched sites 1, 2, 3, 4, and 5, and a current user searches sites 3, 4, and 5, the system will recommend sites 1 and 2.
