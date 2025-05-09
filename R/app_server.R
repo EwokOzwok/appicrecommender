@@ -361,9 +361,13 @@ app_server <- function(input, output, session) {
         ~long_jittered, ~lat_jittered,
         label = ~paste(City, State, Country),
         popup = ~paste0(
-          "<strong>", `Site...Department`, "</strong><br/>",
-          "📅 <b>Application Due Date:</b> ", Application.Due.Date, "<br/>",
-          "<a href='", URL, "' target='_blank'>View Program Info</a>"
+          "<div style='max-width: 250px;'>",
+          "<h4 style='margin:0;'>", `Site...Department`, "</h4>",
+          "<p style='margin:5px 0;'><b>📅 Application Due Date:</b><br/>", Application.Due.Date, "</p>",
+          "<button onclick=\"window.open('", URL, "', '_blank')\" ",
+          "style='background-color:#007aff; color:white; border:none; padding:6px 12px; border-radius:5px; cursor:pointer;'>",
+          "View Program Info</button>",
+          "</div>"
         )
       )
   })
