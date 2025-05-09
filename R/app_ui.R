@@ -108,6 +108,7 @@ app_ui <- function(request) {
                 hover = TRUE,
                 f7Card(
                   f7Align(h2("The APPIC Site Map"), side = c("center")),
+                  uiOutput("RecommendationToggle"),
                   br(),
                   leafletOutput("map", height = "600px"),
                   hairlines = F, strong = T, inset = F, tablet = FALSE

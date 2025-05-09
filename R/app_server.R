@@ -17,6 +17,7 @@
 app_server <- function(input, output, session) {
 
   site_list <- reactiveValues(appic = appic$APPICNumber, site = appic$Site...Department)
+  rec_geo_df <- reactiveVal()
 
 
   runjs('
@@ -264,10 +265,22 @@ app_server <- function(input, output, session) {
     promise <- future({
       tryCatch({
         print("Starting POST request...")
+
+        f7Notif(
+          "Running Recommendation Algorithm now...",
+          icon = f7Icon("bolt"),
+          title = "Notification",
+          titleRightText = "now",
+          subtitle = "Processing recommendation request",
+          closeTimeout = 5000,
+          closeButton = FALSE,
+          closeOnClick = TRUE,
+          swipeToClose = TRUE)
+
         print(paste("Sending sites:", paste(sites, collapse=", ")))
 
         response <- POST(
-          "http://localhost:9090/recommend",
+          "https://evanozmat.com/recommend",
           body = list(appic_numbers = appic_numbers,
                       program_type = program,
                       degree_type = degree,
@@ -303,6 +316,7 @@ app_server <- function(input, output, session) {
           print("JSON parsed successfully")
           json_data<-as.data.frame(as.matrix(json_data))
 
+          rec_geo_df(json_data)
 
           # Show the data frame to the user in a DataTable
           output$dataTable <- DT::renderDT({
@@ -326,7 +340,9 @@ app_server <- function(input, output, session) {
             f7DownloadButton("download", "Download Recommendations")
           })
 
-
+          output$RecommendationToggle <- renderUI({
+            f7Toggle("rectoggle", "Show only recommended sites", checked = F)
+          })
 
 
 
@@ -371,6 +387,54 @@ app_server <- function(input, output, session) {
         )
       )
   })
+
+
+  observeEvent(input$rectoggle,{
+    if(input$rectoggle == T){
+    recs <- rec_geo_df()
+    filtered_df <- appicgeo[appicgeo$APPICNumber %in% recs[, 1], ]
+
+    output$map <- renderLeaflet({
+      leaflet(data = filtered_df) %>%
+        addTiles() %>%
+        addMarkers(
+          ~long_jittered, ~lat_jittered,
+          label = ~paste(City, State, Country),
+          popup = ~paste0(
+            "<div style='max-width: 250px;'>",
+            "<h4 style='margin:0;'>", `Site...Department`, "</h4>",
+            "<p style='margin:5px 0;'><b>📅 Application Due Date:</b><br/>", Application.Due.Date, "</p>",
+            "<button onclick=\"window.open('", URL, "', '_blank')\" ",
+            "style='background-color:#007aff; color:white; border:none; padding:6px 12px; border-radius:5px; cursor:pointer;'>",
+            "View Program Info</button>",
+            "</div>"
+          )
+        )
+    })
+
+    } else {
+
+    output$map <- renderLeaflet({
+      leaflet(data = appicgeo) %>%
+        addTiles() %>%
+        addMarkers(
+          ~long_jittered, ~lat_jittered,
+          label = ~paste(City, State, Country),
+          popup = ~paste0(
+            "<div style='max-width: 250px;'>",
+            "<h4 style='margin:0;'>", `Site...Department`, "</h4>",
+            "<p style='margin:5px 0;'><b>📅 Application Due Date:</b><br/>", Application.Due.Date, "</p>",
+            "<button onclick=\"window.open('", URL, "', '_blank')\" ",
+            "style='background-color:#007aff; color:white; border:none; padding:6px 12px; border-radius:5px; cursor:pointer;'>",
+            "View Program Info</button>",
+            "</div>"
+          )
+        )
+    })
+
+    }
+  })
+
 
 
 }
