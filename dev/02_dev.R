@@ -39,6 +39,7 @@ golem::add_any_file("file.json")
 ## Add internal datasets ----
 ## If you have data in your package
 usethis::use_data_raw(name = "appic", open = FALSE)
+usethis::use_data_raw(name = "appicgeo", open = FALSE)
 
 ## Tests ----
 ## Add one line by test you want to create

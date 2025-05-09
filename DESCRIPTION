@@ -12,17 +12,19 @@ Depends:
     R (>= 2.10)
 Imports: 
     config,
+    dplyr,
     DT,
     future,
     golem,
     htmltools,
     httr,
     jsonlite,
-    pkgload,
+    leaflet,
     promises,
     shiny,
     shinyjs,
-    shinyMobile
+    shinyMobile,
+    tidygeocoder
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3

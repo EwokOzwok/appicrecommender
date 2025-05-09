@@ -10,6 +10,9 @@
 #' @import future
 #' @import promises
 #' @import DT
+#' @import leaflet
+#' @import tidygeocoder
+#' @import dplyr
 #' @noRd
 app_server <- function(input, output, session) {
 
@@ -349,4 +352,21 @@ app_server <- function(input, output, session) {
       }
     )
   })
+
+
+  output$map <- renderLeaflet({
+    leaflet(data = appicgeo) %>%
+      addTiles() %>%
+      addMarkers(
+        ~long_jittered, ~lat_jittered,
+        label = ~paste(City, State, Country),
+        popup = ~paste0(
+          "<strong>", `Site...Department`, "</strong><br/>",
+          "📅 <b>Application Due Date:</b> ", Application.Due.Date, "<br/>",
+          "<a href='", URL, "' target='_blank'>View Program Info</a>"
+        )
+      )
+  })
+
+
 }

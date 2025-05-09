@@ -95,7 +95,30 @@ app_ui <- function(request) {
               )
             )
           )
+          ),
+
+
+          f7Tab(
+            tabName = "Map",
+            icon = f7Icon("map_pin"),
+            active = TRUE,
+            f7Block(
+              f7Shadow(
+                intensity = 5,
+                hover = TRUE,
+                f7Card(
+                  f7Align(h2("The APPIC Site Map"), side = c("center")),
+                  br(),
+                  leafletOutput("map", height = "600px"),
+                  hairlines = F, strong = T, inset = F, tablet = FALSE
+                )
+              )
+            )
+
+
           )
+
+
         )
       )
     )
