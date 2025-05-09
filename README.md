@@ -59,6 +59,7 @@ For a demonstration, view the "Usage Example.gif" included in the repository.
 ## Features
 - Cosine similarity-based site recommendations
 - User-driven recommendation system based on previous searches
+- Search all or only recommended sites on a map
 - Compatibility with Flask and R environments
 
 ## Project Status
