@@ -258,24 +258,19 @@ app_server <- function(input, output, session) {
     }
 
 
-
+    f7Notif(
+      text = "Running Recommendation Algorithm now...",
+      icon = f7Icon("bolt_fill"),
+      title = "Notification",
+      subtitle = "Processing recommendation request",
+      titleRightText = "now"
+    )
 
 
 
     promise <- future({
       tryCatch({
         print("Starting POST request...")
-
-        f7Notif(
-          "Running Recommendation Algorithm now...",
-          icon = f7Icon("bolt"),
-          title = "Notification",
-          titleRightText = "now",
-          subtitle = "Processing recommendation request",
-          closeTimeout = 5000,
-          closeButton = FALSE,
-          closeOnClick = TRUE,
-          swipeToClose = TRUE)
 
         print(paste("Sending sites:", paste(sites, collapse=", ")))
 
