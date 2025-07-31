@@ -91,8 +91,6 @@ def recommend_appic_numbers(csv_file_path, input_appic_numbers):
   
 # Example usage:
 
-
-
 @app.route('/recommend', methods=['POST'])
 def get_recommendations():
     try:
@@ -114,6 +112,7 @@ def get_recommendations():
         print(appic_numbers)
         print(program)
         print(degree)
+        print(f"Site type: {site_type}")
         
         # Save data to CSV
         with open('requests_log.csv', mode='a', newline='') as file:
@@ -133,23 +132,48 @@ def get_recommendations():
                 'received_numbers': appic_numbers
             }), 400
 
-        filtered_df = df[(df[program] == 1) & (df[degree] == 1) & (df[site_type] == 1)]
+        # MODIFIED FILTERING LOGIC - Apply degree and program filters first
+        # Start with base filtering for degree and program compatibility
+        filtered_df = df[(df[program] == 1) & (df[degree] == 1)]
+        
+        # Apply site type filter only if it's specified and not "AllSites"
+        if site_type and site_type != "AllSites":
+            # Ensure the site_type column exists in the dataframe
+            if site_type in df.columns:
+                filtered_df = filtered_df[filtered_df[site_type] == 1]
+                print(f"Applied site type filter: {site_type}")
+                print(f"Sites after site type filtering: {len(filtered_df)}")
+            else:
+                print(f"Warning: Site type column '{site_type}' not found in dataframe")
+        
+        print(f"Total sites after all filtering: {len(filtered_df)}")
+        
+        # Check if we have any sites left after filtering
+        if len(filtered_df) == 0:
+            return jsonify({
+                'error': 'No sites match the specified criteria',
+                'program': program,
+                'degree': degree,
+                'site_type': site_type
+            }), 400
 
         if user_rec_status == 1:
-            # Filter the dataframe based on the program and degree types
-    
-            # Get recommendations
+            # Get content-based recommendations from filtered data
             recommendations = recommend_sites(appic_numbers, data=filtered_df)
     
             # USER RECOMMENDATIONS HERE!
-            csv_path = "requests_log.csv"  # Replace with your file path
-
+            csv_path = "requests_log.csv"
             user_recs = recommend_appic_numbers(csv_path, appic_numbers)
-            
             top_5_user_recs = [appic_number for appic_number, score in user_recs[:5]]
             
-            
+            # IMPORTANT: Filter user recommendations by the same criteria
             user_recs_df = df[df['APPIC Number'].isin(top_5_user_recs)]
+            # Apply the same filtering to user recommendations
+            user_recs_df = user_recs_df[(user_recs_df[program] == 1) & (user_recs_df[degree] == 1)]
+            
+            # Apply site type filter to user recommendations if specified
+            if site_type and site_type != "AllSites" and site_type in df.columns:
+                user_recs_df = user_recs_df[user_recs_df[site_type] == 1]
             
             user_recs_df['similarity_score'] = "User Suggested"
             # Select columns from user_recs_df that match recommendations and reorder them
@@ -180,6 +204,94 @@ def get_recommendations():
             'error': str(e),
             'type': type(e).__name__
         }), 500
+
+# @app.route('/recommend', methods=['POST'])
+# def get_recommendations():
+#     try:
+#         # Get the request data and log it
+#         data = request.get_json()
+#         print(f"Received request data: {data}")
+# 
+#         if not data or 'appic_numbers' not in data:
+#             return jsonify({
+#                 'error': 'No appic_numbers provided in request',
+#                 'received_data': data
+#             }), 400
+# 
+#         appic_numbers = data['appic_numbers']
+#         program = data['program_type']
+#         degree = data['degree_type']
+#         site_type = data['site_type']
+#         user_rec_status = data['user_rec_status']
+#         print(appic_numbers)
+#         print(program)
+#         print(degree)
+#         
+#         # Save data to CSV
+#         with open('requests_log.csv', mode='a', newline='') as file:
+#             writer = csv.writer(file)
+#             # Write headers if the file is empty
+#             if file.tell() == 0:
+#                 writer.writerow(['appic_numbers', 'program', 'degree'])
+#             # Write new row
+#             writer.writerow([appic_numbers, program, degree])
+# 
+#         # Convert to integers and validate
+#         try:
+#             appic_numbers = [int(num) for num in appic_numbers]
+#         except (ValueError, TypeError):
+#             return jsonify({
+#                 'error': 'Invalid APPIC numbers format',
+#                 'received_numbers': appic_numbers
+#             }), 400
+# 
+#         filtered_df = df[(df[program] == 1) & (df[degree] == 1) & (df[site_type] == 1)]
+# 
+#         if user_rec_status == 1:
+#             # Filter the dataframe based on the program and degree types
+#     
+#             # Get recommendations
+#             recommendations = recommend_sites(appic_numbers, data=filtered_df)
+#     
+#             # USER RECOMMENDATIONS HERE!
+#             csv_path = "requests_log.csv"  # Replace with your file path
+# 
+#             user_recs = recommend_appic_numbers(csv_path, appic_numbers)
+#             
+#             top_5_user_recs = [appic_number for appic_number, score in user_recs[:5]]
+#             
+#             
+#             user_recs_df = df[df['APPIC Number'].isin(top_5_user_recs)]
+#             
+#             user_recs_df['similarity_score'] = "User Suggested"
+#             # Select columns from user_recs_df that match recommendations and reorder them
+#             user_recs_selected = user_recs_df[['APPIC Number', 'similarity_score', 'Site / Department', 
+#                                                'City', 'State', 'Country', 'Application Due Date', 'web_data']]
+#             
+#             # Ensure user recommendations are at the top
+#             recommendations = pd.concat([user_recs_selected, recommendations], ignore_index=True)
+# 
+#         if user_rec_status == 0:
+#             recommendations = recommend_sites(appic_numbers, data=filtered_df)
+# 
+#         # Convert DataFrame to dictionary for JSON response
+#         recommendations_dict = recommendations.to_dict(orient='records')
+#         for record in recommendations_dict:
+#             for key, value in record.items():
+#                 if isinstance(value, (np.int64, np.int32)):
+#                     record[key] = int(value)
+#                 elif isinstance(value, (np.float64, np.float32)):
+#                     record[key] = float(value)
+# 
+#         response = jsonify(recommendations_dict)
+#         return response
+# 
+#     except Exception as e:
+#         print(f"Error processing request: {str(e)}")
+#         return jsonify({
+#             'error': str(e),
+#             'type': type(e).__name__
+#         }), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=9090, debug=True)

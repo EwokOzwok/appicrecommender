@@ -21,6 +21,8 @@ app_server <- function(input, output, session) {
   rec_geo_df <- reactiveVal()
   edit_counter = reactiveVal(0)
 
+  # Reactive value to store filtered sites
+  filtered_sites <- reactiveVal(as.character(appic$Site...Department))
 
   runjs('
   $(document).ready(function() {
@@ -32,7 +34,6 @@ app_server <- function(input, output, session) {
     });
   });
 ')
-
 
   # Define Promises Functions -----------------------------------------------
   future::plan(multisession)
@@ -50,131 +51,289 @@ app_server <- function(input, output, session) {
     }
   }
 
+  # Initial render of site selector - this will be updated by updateF7SmartSelect
+  output$site_selector <- renderUI({
+    tagList(
+      f7SmartSelect("sites", "Choose at least 2 sites:",
+                    openIn = 'page', searchbar = TRUE, multiple = TRUE,
+                    selected = NULL, choices = as.list(as.character(appic$Site...Department)))
+    )
+  })
 
   observeEvent({
-      input$programtype
-      input$degreetype
-      input$sitetype
-    }, {
-    program = input$programtype
-    degree = input$degreetype
-    sitetype = input$sitetype
+    input$programtype
+    input$degreetype
+    input$sitetype
+  }, {
+    program <- input$programtype
+    degree <- input$degreetype
+    sitetype <- input$sitetype
 
+    # Validation mappings
+    possible_site_types <- c("select one", "VAMC", "UCC", "Consortia",
+                             "Community Mental Health", "Hospitals (Non-VA)",
+                             "Child/Adolescent")
 
-    possible_site_types = c("select one", "VAMC", "UCC", "Consortia", "Community Mental Health", "Hospitals (Non-VA)", "Child/Adolescent")
+    sitetypecols <- c("AllSites", "VAMC", "UCC", "Consortia",
+                      "CommunityMH", "Hospitals", "ChildAdolescent")
 
-    sitetypecols = c("AllSites", "VAMC",	"UCC",	"Consortia",	"CommunityMH",	"Hospitals",	"ChildAdolescent")
+    # Input validation
+    if (is.null(program) || is.null(degree) || is.null(sitetype)) {
+      output$get_recs_button <- renderUI({})
+      # Reset to all sites if inputs are invalid
+      filtered_sites(as.character(appic$Site...Department))
+      return()
+    }
 
-    selected_site_col <- sitetypecols[match(input$sitetype, possible_site_types)]
+    # Check if required selections are valid
+    if (program == "select one" || degree == "select one") {
+      output$get_recs_button <- renderUI({})
+      # Reset to all sites if selections are invalid
+      filtered_sites(as.character(appic$Site...Department))
+      return()
+    }
 
-    print(program)
-    print(degree)
-    print(selected_site_col)
+    # Validate inputs against expected values
+    valid_programs <- c("Clinical", "Counseling", "School")
+    valid_degrees <- c("PhD", "PsyD", "EdD")
+
+    if (!program %in% valid_programs || !degree %in% valid_degrees) {
+      warning("Invalid input selection detected")
+      output$get_recs_button <- renderUI({})
+      filtered_sites(as.character(appic$Site...Department))
+      return()
+    }
+
+    # Handle optional site type filtering
+    use_site_filter <- !is.null(sitetype) && sitetype != "select one"
+    selected_site_col <- NULL
+
+    if (use_site_filter) {
+      if (!sitetype %in% possible_site_types) {
+        warning("Invalid site type selection detected")
+        output$get_recs_button <- renderUI({})
+        filtered_sites(as.character(appic$Site...Department))
+        return()
+      }
+
+      # Get the corresponding site type column
+      selected_site_col <- sitetypecols[match(sitetype, possible_site_types)]
+
+      # Check if the column exists in the data
+      if (is.na(selected_site_col) || !selected_site_col %in% names(appic)) {
+        warning(paste("Site type column not found:", selected_site_col))
+        output$get_recs_button <- renderUI({})
+        filtered_sites(as.character(appic$Site...Department))
+        return()
+      }
+    }
+
+    print(paste("Program:", program))
+    print(paste("Degree:", degree))
+    print(paste("Site type:", sitetype))
+    print(paste("Use site filter:", use_site_filter))
+    if (use_site_filter) {
+      print(paste("Site column:", selected_site_col))
+    }
 
     current_site_type(selected_site_col)
 
-    if(program == "select one" | degree == "select one"){
-      output$get_recs_button <- renderUI({})
-      output$site_selector <- renderUI({})
+    # Dynamic filtering using computed conditions
+    tryCatch({
+      # Build filter conditions dynamically
+      degree_condition <- appic[[degree]] == 1
+      program_condition <- appic[[program]] == 1
 
-
-    } else {
-
-      if(degree == "PhD"){
-        if(program == "Clinical"){
-          site_list$site = appic[appic$PhD == 1 & appic$Clinical == 1 & appic[,selected_site_col] == 1, "Site...Department"]
-          site_list$appic = appic[appic$PhD == 1 & appic$Clinical == 1 & appic[,selected_site_col] == 1, "APPICNumber"]
-
-
-          }
-
-        if(program == "Counseling"){
-          site_list$site = appic[appic$PhD == 1 & appic$Counseling == 1 & appic[,selected_site_col] == 1, "Site...Department"]
-          site_list$appic = appic[appic$PhD == 1 & appic$Counseling == 1 & appic[,selected_site_col] == 1, "APPICNumber"]
-
-          }
-
-        if(program == "School"){
-          site_list$site = appic[appic$PhD == 1 & appic$School == 1 & appic[,selected_site_col] == 1, "Site...Department"]
-          site_list$appic = appic[appic$PhD == 1 & appic$School == 1 & appic[,selected_site_col] == 1, "APPICNumber"]
-          }
+      # Apply site filter only if specified
+      if (use_site_filter) {
+        site_condition <- appic[[selected_site_col]] == 1
+        print(paste("Site condition sum:", sum(site_condition, na.rm = TRUE)))
+        # Check if site column has valid data
+        if (any(is.na(site_condition))) {
+          warning("Missing or invalid data in site filtering column")
+        }
+        combined_filter <- degree_condition & program_condition & site_condition
+        print(paste("Combined filter sum:", sum(combined_filter, na.rm = TRUE)))
+      } else {
+        combined_filter <- degree_condition & program_condition
+        print(paste("No site filter - combined filter sum:", sum(combined_filter, na.rm = TRUE)))
       }
 
-      if(degree == "PsyD"){
-        if(program == "Clinical"){
-          site_list$site = appic[appic$PsyD == 1 & appic$Clinical == 1 & appic[,selected_site_col] == 1, "Site...Department"]
-          site_list$appic = appic[appic$PsyD == 1 & appic$Clinical == 1 & appic[,selected_site_col] == 1, "APPICNumber"]
-
-
-        }
-
-        if(program == "Counseling"){
-          site_list$site = appic[appic$PsyD == 1 & appic$Counseling == 1 & appic[,selected_site_col] == 1, "Site...Department"]
-          site_list$appic = appic[appic$PsyD == 1 & appic$Counseling == 1 & appic[,selected_site_col] == 1, "APPICNumber"]
-
-        }
-
-        if(program == "School"){
-          site_list$site = appic[appic$PsyD == 1 & appic$School == 1 & appic[,selected_site_col] == 1, "Site...Department"]
-          site_list$appic = appic[appic$PsyD == 1 & appic$School == 1 & appic[,selected_site_col] == 1, "APPICNumber"]
-        }
+      # Check if required columns have valid data
+      if (any(is.na(degree_condition)) || any(is.na(program_condition))) {
+        warning("Missing or invalid data in filtering columns")
       }
 
+      # Handle case where no sites match the criteria
+      if (sum(combined_filter, na.rm = TRUE) == 0) {
+        warning("No sites match the selected criteria")
+        site_list$site <- character(0)
+        site_list$appic <- character(0)
+        filtered_sites(character(0))
+      } else {
+        # Filter and assign results
+        site_list$site <- appic[combined_filter & !is.na(combined_filter), "Site...Department"]
+        site_list$appic <- appic[combined_filter & !is.na(combined_filter), "APPICNumber"]
+        filtered_sites(as.character(site_list$site))
 
-      if(degree == "EdD"){
-        if(program == "Clinical"){
-          site_list$site = appic[appic$EdD == 1 & appic$Clinical == 1 & appic[,selected_site_col] == 1, "Site...Department"]
-          site_list$appic = appic[appic$EdD == 1 & appic$Clinical == 1 & appic[,selected_site_col] == 1, "APPICNumber"]
-
-
-        }
-
-        if(program == "Counseling"){
-          site_list$site = appic[appic$EdD == 1 & appic$Counseling == 1 & appic[,selected_site_col] == 1, "Site...Department"]
-          site_list$appic = appic[appic$EdD == 1 & appic$Counseling == 1 & appic[,selected_site_col] == 1, "APPICNumber"]
-
-        }
-
-        if(program == "School"){
-          site_list$site = appic[appic$EdD == 1 & appic$School == 1 & appic[,selected_site_col] == 1, "Site...Department"]
-          site_list$appic = appic[appic$EdD == 1 & appic$School == 1 & appic[,selected_site_col] == 1, "APPICNumber"]
-        }
+        print(paste("Found", length(site_list$site), "matching sites"))
       }
 
+    }, error = function(e) {
+      warning(paste("Error in filtering:", e$message))
+      site_list$site <- character(0)
+      site_list$appic <- character(0)
+      filtered_sites(character(0))
+    })
 
+    # Render the recommend button since we have valid program and degree selections
+    output$get_recs_button <- renderUI({
+      tagList(
+        f7Button("get_recommendations", "Get Site Recommendations!")
+      )
+    })
+  })
 
+  # Observer to update site selector when filtered_sites changes
+  observeEvent({
+    input$programtype
+    input$degreetype
+    input$sitetype
+  }, {
+    print(paste("Observer triggered: Updating site selector with", length(filtered_sites()), "sites"))
+
+    output$site_selector <- renderUI({})
+    # Delay for 150 milliseconds (0.15 seconds)
+    shinyjs::delay(150, {
       output$site_selector <- renderUI({
-        req(site_list$site)
         tagList(
-          f7SmartSelect("sites", "Choose at least 2 sites:", openIn = 'page', searchbar = T, multiple = T, selected = "Choose sites", choices = site_list$site),
-
+          f7SmartSelect("sites", "Choose at least 2 sites:",
+                        openIn = 'page', searchbar = TRUE, multiple = TRUE,
+                        selected = NULL, choices = filtered_sites())
         )
       })
-
-      current_count = edit_counter()
-      if(current_count > 0){
-        updateF7SmartSelect("sites", choices = site_list$site, selected = NULL, session = session)
-
-      }
-
-      edit_counter(edit_counter()+1)
-
-      output$get_recs_button <- renderUI({
-        tagList(
-          f7Button("get_recommendations", "Get Site Recommendations!")
-        )
-      })
-
-
-
-
-    }
-
-
-
+    })
 
 
   })
+
+
+  # observeEvent({
+  #     input$programtype
+  #     input$degreetype
+  #     input$sitetype
+  #   }, {
+  #   program = input$programtype
+  #   degree = input$degreetype
+  #   sitetype = input$sitetype
+  #
+  #
+  #   possible_site_types = c("select one", "VAMC", "UCC", "Consortia", "Community Mental Health", "Hospitals (Non-VA)", "Child/Adolescent")
+  #
+  #   sitetypecols = c("AllSites", "VAMC",	"UCC",	"Consortia",	"CommunityMH",	"Hospitals",	"ChildAdolescent")
+  #
+  #   selected_site_col <- sitetypecols[match(input$sitetype, possible_site_types)]
+  #
+  #   print(program)
+  #   print(degree)
+  #   print(selected_site_col)
+  #
+  #   current_site_type(selected_site_col)
+  #
+  #   if(program == "select one" | degree == "select one"){
+  #     output$get_recs_button <- renderUI({})
+  #
+  #
+  #   } else {
+  #
+  #     if(degree == "PhD"){
+  #       if(program == "Clinical"){
+  #         site_list$site = appic[appic$PhD == 1 & appic$Clinical == 1 & appic[,selected_site_col] == 1, "Site...Department"]
+  #         site_list$appic = appic[appic$PhD == 1 & appic$Clinical == 1 & appic[,selected_site_col] == 1, "APPICNumber"]
+  #
+  #
+  #         }
+  #
+  #       if(program == "Counseling"){
+  #         site_list$site = appic[appic$PhD == 1 & appic$Counseling == 1 & appic[,selected_site_col] == 1, "Site...Department"]
+  #         site_list$appic = appic[appic$PhD == 1 & appic$Counseling == 1 & appic[,selected_site_col] == 1, "APPICNumber"]
+  #
+  #         }
+  #
+  #       if(program == "School"){
+  #         site_list$site = appic[appic$PhD == 1 & appic$School == 1 & appic[,selected_site_col] == 1, "Site...Department"]
+  #         site_list$appic = appic[appic$PhD == 1 & appic$School == 1 & appic[,selected_site_col] == 1, "APPICNumber"]
+  #         }
+  #     }
+  #
+  #     if(degree == "PsyD"){
+  #       if(program == "Clinical"){
+  #         site_list$site = appic[appic$PsyD == 1 & appic$Clinical == 1 & appic[,selected_site_col] == 1, "Site...Department"]
+  #         site_list$appic = appic[appic$PsyD == 1 & appic$Clinical == 1 & appic[,selected_site_col] == 1, "APPICNumber"]
+  #
+  #
+  #       }
+  #
+  #       if(program == "Counseling"){
+  #         site_list$site = appic[appic$PsyD == 1 & appic$Counseling == 1 & appic[,selected_site_col] == 1, "Site...Department"]
+  #         site_list$appic = appic[appic$PsyD == 1 & appic$Counseling == 1 & appic[,selected_site_col] == 1, "APPICNumber"]
+  #
+  #       }
+  #
+  #       if(program == "School"){
+  #         site_list$site = appic[appic$PsyD == 1 & appic$School == 1 & appic[,selected_site_col] == 1, "Site...Department"]
+  #         site_list$appic = appic[appic$PsyD == 1 & appic$School == 1 & appic[,selected_site_col] == 1, "APPICNumber"]
+  #       }
+  #     }
+  #
+  #
+  #     if(degree == "EdD"){
+  #       if(program == "Clinical"){
+  #         site_list$site = appic[appic$EdD == 1 & appic$Clinical == 1 & appic[,selected_site_col] == 1, "Site...Department"]
+  #         site_list$appic = appic[appic$EdD == 1 & appic$Clinical == 1 & appic[,selected_site_col] == 1, "APPICNumber"]
+  #
+  #
+  #       }
+  #
+  #       if(program == "Counseling"){
+  #         site_list$site = appic[appic$EdD == 1 & appic$Counseling == 1 & appic[,selected_site_col] == 1, "Site...Department"]
+  #         site_list$appic = appic[appic$EdD == 1 & appic$Counseling == 1 & appic[,selected_site_col] == 1, "APPICNumber"]
+  #
+  #       }
+  #
+  #       if(program == "School"){
+  #         site_list$site = appic[appic$EdD == 1 & appic$School == 1 & appic[,selected_site_col] == 1, "Site...Department"]
+  #         site_list$appic = appic[appic$EdD == 1 & appic$School == 1 & appic[,selected_site_col] == 1, "APPICNumber"]
+  #       }
+  #     }
+  #
+  #     current_df = as.data.frame(matrix(data=NA, nrow = length(site_list$site), ncol = 2))
+  #     current_df[,1]=site_list$site
+  #     current_df[,2]=site_list$appic
+  #     print(head(current_df)
+  #
+  #     updateF7SmartSelect("sites", choices = site_list$site, selected = NULL, session = session)
+  #
+  #     # current_count = edit_counter()
+  #     # if(current_count > 0){
+  #     #
+  #     # }
+  #
+  #     edit_counter(edit_counter()+1)
+  #
+  #     output$get_recs_button <- renderUI({
+  #       tagList(
+  #         f7Button("get_recommendations", "Get Site Recommendations!")
+  #       )
+  #     })
+  #
+  #
+  #
+  #
+  #   }
+  #
+  #
+  # })
 
 
 
@@ -303,7 +462,8 @@ app_server <- function(input, output, session) {
         print(paste("Sending sites:", paste(sites, collapse=", ")))
 
         response <- POST(
-          "http://localhost:9090/recommend",
+          # "http://localhost:9090/recommend",
+          "https://evanozmat.com/recommend",
           body = list(appic_numbers = appic_numbers,
                       program_type = program,
                       degree_type = degree,
