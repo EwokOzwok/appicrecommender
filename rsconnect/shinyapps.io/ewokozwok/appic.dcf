@@ -5,7 +5,7 @@ account: ewokozwok
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 14724224
-bundleId: 10708656
+bundleId: 10708825
 url: https://ewokozwok.shinyapps.io/appic/
 version: 1
 asMultiple: FALSE
