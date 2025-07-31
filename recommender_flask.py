@@ -109,6 +109,7 @@ def get_recommendations():
         appic_numbers = data['appic_numbers']
         program = data['program_type']
         degree = data['degree_type']
+        site_type = data['site_type']
         user_rec_status = data['user_rec_status']
         print(appic_numbers)
         print(program)
@@ -132,7 +133,7 @@ def get_recommendations():
                 'received_numbers': appic_numbers
             }), 400
 
-        filtered_df = df[(df[program] == 1) & (df[degree] == 1)]
+        filtered_df = df[(df[program] == 1) & (df[degree] == 1) & (df[site_type] == 1)]
 
         if user_rec_status == 1:
             # Filter the dataframe based on the program and degree types

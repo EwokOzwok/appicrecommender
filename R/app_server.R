@@ -17,7 +17,9 @@
 app_server <- function(input, output, session) {
 
   site_list <- reactiveValues(appic = appic$APPICNumber, site = appic$Site...Department)
+  current_site_type <- reactiveVal(NULL)
   rec_geo_df <- reactiveVal()
+  edit_counter = reactiveVal(0)
 
 
   runjs('
@@ -49,11 +51,28 @@ app_server <- function(input, output, session) {
   }
 
 
-
-
-  observe({
+  observeEvent({
+      input$programtype
+      input$degreetype
+      input$sitetype
+    }, {
     program = input$programtype
     degree = input$degreetype
+    sitetype = input$sitetype
+
+
+    possible_site_types = c("select one", "VAMC", "UCC", "Consortia", "Community Mental Health", "Hospitals (Non-VA)", "Child/Adolescent")
+
+    sitetypecols = c("AllSites", "VAMC",	"UCC",	"Consortia",	"CommunityMH",	"Hospitals",	"ChildAdolescent")
+
+    selected_site_col <- sitetypecols[match(input$sitetype, possible_site_types)]
+
+    print(program)
+    print(degree)
+    print(selected_site_col)
+
+    current_site_type(selected_site_col)
+
     if(program == "select one" | degree == "select one"){
       output$get_recs_button <- renderUI({})
       output$site_selector <- renderUI({})
@@ -63,75 +82,82 @@ app_server <- function(input, output, session) {
 
       if(degree == "PhD"){
         if(program == "Clinical"){
-          site_list$site = appic[appic$PhD == 1 & appic$Clinical == 1, "Site...Department"]
-          site_list$appic = appic[appic$PhD == 1 & appic$Clinical == 1, "APPICNumber"]
+          site_list$site = appic[appic$PhD == 1 & appic$Clinical == 1 & appic[,selected_site_col] == 1, "Site...Department"]
+          site_list$appic = appic[appic$PhD == 1 & appic$Clinical == 1 & appic[,selected_site_col] == 1, "APPICNumber"]
 
 
           }
 
         if(program == "Counseling"){
-          site_list$site = appic[appic$PhD == 1 & appic$Counseling == 1, "Site...Department"]
-          site_list$appic = appic[appic$PhD == 1 & appic$Counseling == 1, "APPICNumber"]
+          site_list$site = appic[appic$PhD == 1 & appic$Counseling == 1 & appic[,selected_site_col] == 1, "Site...Department"]
+          site_list$appic = appic[appic$PhD == 1 & appic$Counseling == 1 & appic[,selected_site_col] == 1, "APPICNumber"]
 
           }
 
         if(program == "School"){
-          site_list$site = appic[appic$PhD == 1 & appic$School == 1, "Site...Department"]
-          site_list$appic = appic[appic$PhD == 1 & appic$School == 1, "APPICNumber"]
+          site_list$site = appic[appic$PhD == 1 & appic$School == 1 & appic[,selected_site_col] == 1, "Site...Department"]
+          site_list$appic = appic[appic$PhD == 1 & appic$School == 1 & appic[,selected_site_col] == 1, "APPICNumber"]
           }
       }
 
       if(degree == "PsyD"){
         if(program == "Clinical"){
-          site_list$site = appic[appic$PsyD == 1 & appic$Clinical == 1, "Site...Department"]
-          site_list$appic = appic[appic$PsyD == 1 & appic$Clinical == 1, "APPICNumber"]
+          site_list$site = appic[appic$PsyD == 1 & appic$Clinical == 1 & appic[,selected_site_col] == 1, "Site...Department"]
+          site_list$appic = appic[appic$PsyD == 1 & appic$Clinical == 1 & appic[,selected_site_col] == 1, "APPICNumber"]
 
 
         }
 
         if(program == "Counseling"){
-          site_list$site = appic[appic$PsyD == 1 & appic$Counseling == 1, "Site...Department"]
-          site_list$appic = appic[appic$PsyD == 1 & appic$Counseling == 1, "APPICNumber"]
+          site_list$site = appic[appic$PsyD == 1 & appic$Counseling == 1 & appic[,selected_site_col] == 1, "Site...Department"]
+          site_list$appic = appic[appic$PsyD == 1 & appic$Counseling == 1 & appic[,selected_site_col] == 1, "APPICNumber"]
 
         }
 
         if(program == "School"){
-          site_list$site = appic[appic$PsyD == 1 & appic$School == 1, "Site...Department"]
-          site_list$appic = appic[appic$PsyD == 1 & appic$School == 1, "APPICNumber"]
+          site_list$site = appic[appic$PsyD == 1 & appic$School == 1 & appic[,selected_site_col] == 1, "Site...Department"]
+          site_list$appic = appic[appic$PsyD == 1 & appic$School == 1 & appic[,selected_site_col] == 1, "APPICNumber"]
         }
       }
 
 
       if(degree == "EdD"){
         if(program == "Clinical"){
-          site_list$site = appic[appic$EdD == 1 & appic$Clinical == 1, "Site...Department"]
-          site_list$appic = appic[appic$EdD == 1 & appic$Clinical == 1, "APPICNumber"]
+          site_list$site = appic[appic$EdD == 1 & appic$Clinical == 1 & appic[,selected_site_col] == 1, "Site...Department"]
+          site_list$appic = appic[appic$EdD == 1 & appic$Clinical == 1 & appic[,selected_site_col] == 1, "APPICNumber"]
 
 
         }
 
         if(program == "Counseling"){
-          site_list$site = appic[appic$EdD == 1 & appic$Counseling == 1, "Site...Department"]
-          site_list$appic = appic[appic$EdD == 1 & appic$Counseling == 1, "APPICNumber"]
+          site_list$site = appic[appic$EdD == 1 & appic$Counseling == 1 & appic[,selected_site_col] == 1, "Site...Department"]
+          site_list$appic = appic[appic$EdD == 1 & appic$Counseling == 1 & appic[,selected_site_col] == 1, "APPICNumber"]
 
         }
 
         if(program == "School"){
-          site_list$site = appic[appic$EdD == 1 & appic$School == 1, "Site...Department"]
-          site_list$appic = appic[appic$EdD == 1 & appic$School == 1, "APPICNumber"]
+          site_list$site = appic[appic$EdD == 1 & appic$School == 1 & appic[,selected_site_col] == 1, "Site...Department"]
+          site_list$appic = appic[appic$EdD == 1 & appic$School == 1 & appic[,selected_site_col] == 1, "APPICNumber"]
         }
       }
 
 
 
       output$site_selector <- renderUI({
+        req(site_list$site)
         tagList(
           f7SmartSelect("sites", "Choose at least 2 sites:", openIn = 'page', searchbar = T, multiple = T, selected = "Choose sites", choices = site_list$site),
 
         )
       })
 
+      current_count = edit_counter()
+      if(current_count > 0){
+        updateF7SmartSelect("sites", choices = site_list$site, selected = NULL, session = session)
 
+      }
+
+      edit_counter(edit_counter()+1)
 
       output$get_recs_button <- renderUI({
         tagList(
@@ -201,6 +227,7 @@ app_server <- function(input, output, session) {
   observeEvent(input$get_recommendations, {
     # Split and convert input numbers to numeric vector
     # sites <- as.numeric(unlist(strsplit(input$site_numbers, "[,\\s]+")))
+
     sites <- na.omit(as.list(input$sites))
     appic_numbers <- c()  # Initialize an empty list to store results
 
@@ -214,6 +241,7 @@ app_server <- function(input, output, session) {
 
     program <- input$programtype
     degree <- input$degreetype
+    sitetype <- current_site_type()
     user_rec_toggle <- input$user_recs
 
     if(user_rec_toggle == T){
@@ -275,10 +303,12 @@ app_server <- function(input, output, session) {
         print(paste("Sending sites:", paste(sites, collapse=", ")))
 
         response <- POST(
-          "http://localhost:9090/recommend",
+          # "http://localhost:9090/recommend",
+          "https://evanozmat.com/recommend",
           body = list(appic_numbers = appic_numbers,
                       program_type = program,
                       degree_type = degree,
+                      site_type = sitetype,
                       user_rec_status = user_rec_status),
           encode = "json"
         )
