@@ -401,6 +401,9 @@ app_server <- function(input, output, session) {
     program <- input$programtype
     degree <- input$degreetype
     sitetype <- current_site_type()
+    if(length(sitetype)==0){
+      sitetype = "AllSites"
+    }
     user_rec_toggle <- input$user_recs
 
     if(user_rec_toggle == T){
@@ -462,7 +465,8 @@ app_server <- function(input, output, session) {
         print(paste("Sending sites:", paste(sites, collapse=", ")))
 
         response <- POST(
-          "http://localhost:9090/recommend",
+          # "http://localhost:9090/recommend",
+          "https://evanozmat.com/recommend",
           body = list(appic_numbers = appic_numbers,
                       program_type = program,
                       degree_type = degree,
