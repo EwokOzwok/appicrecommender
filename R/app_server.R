@@ -466,7 +466,7 @@ app_server <- function(input, output, session) {
         print(paste("Sending sites:", paste(sites, collapse=", ")))
 
         response <- POST(
-          "http://localhost:9090/recommend",
+          "https://evaanozmat.com/recommend",
           body = list(appic_numbers = appic_numbers,
                       program_type = program,
                       degree_type = degree,
