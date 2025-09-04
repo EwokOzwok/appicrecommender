@@ -134,8 +134,11 @@ def get_recommendations():
 
         # MODIFIED FILTERING LOGIC - Apply degree and program filters first
         # Start with base filtering for degree and program compatibility
-        filtered_df = df[(df[program] == 1) & (df[degree] == 1)]
-        
+        if(site_type):
+          filtered_df = df[(df[program] == 1) & (df[degree] == 1) & (df[site_type] == 1)].reset_index(drop=True)
+        else:
+          filtered_df = df[(df[program] == 1) & (df[degree] == 1)].reset_index(drop=True)
+
         # Apply site type filter only if it's specified and not "AllSites"
         if site_type and site_type != "AllSites":
             # Ensure the site_type column exists in the dataframe

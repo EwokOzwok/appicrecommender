@@ -164,6 +164,7 @@ app_server <- function(input, output, session) {
         warning("Missing or invalid data in filtering columns")
       }
 
+      print(combined_filter)
       # Handle case where no sites match the criteria
       if (sum(combined_filter, na.rm = TRUE) == 0) {
         warning("No sites match the selected criteria")

@@ -153,7 +153,7 @@ golem_add_external_resources <- function() {
       color: white !important;
     }
   ")),
-    HTML('<link rel="stylesheet" type="text/css" href="https://ewokozwok.github.io/Rolodex/www/framework7.bundle.min.css">'),
+    # HTML('<link rel="stylesheet" type="text/css" href="https://ewokozwok.github.io/Rolodex/www/framework7.bundle.min.css">'),
 
     # Fix Install button to Upper right of screen
     tags$style("
